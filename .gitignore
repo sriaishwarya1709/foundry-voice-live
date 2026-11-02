@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.azure/
+logs/
+reply.wav
+*.log
+.DS_Store

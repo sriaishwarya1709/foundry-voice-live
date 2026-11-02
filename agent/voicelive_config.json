@@ -1,0 +1,22 @@
+{
+  "session": {
+    "voice": {
+      "name": "en-US-Ava:DragonHDLatestNeural",
+      "type": "azure-standard",
+      "temperature": 0.8
+    },
+    "input_audio_transcription": {
+      "model": "azure-speech"
+    },
+    "turn_detection": {
+      "type": "azure_semantic_vad",
+      "silence_duration_ms": 500,
+      "remove_filler_words": true,
+      "end_of_utterance_detection": {
+        "model": "semantic_detection_v1_multilingual"
+      }
+    },
+    "input_audio_noise_reduction": { "type": "azure_deep_noise_suppression" },
+    "input_audio_echo_cancellation": { "type": "server_echo_cancellation" }
+  }
+}

@@ -1,0 +1,4 @@
+# Local development + agent creation + smoke test.
+# The web app has its own minimal requirements in app/requirements.txt (used by the container).
+-r app/requirements.txt
+azure-ai-projects>=2.10.0

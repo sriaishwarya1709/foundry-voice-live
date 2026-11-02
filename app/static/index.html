@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Foundry Voice Live Studio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true"></span>
+    <div>
+      <h1>Foundry Voice Live Studio</h1>
+      <p class="subtitle">Talk to a Microsoft Foundry agent with Azure Speech Voice Live</p>
+    </div>
+  </div>
+  <div class="status">
+    <span id="statusDot" class="dot"></span><span id="statusText">Disconnected</span>
+    <button id="toggleInspector" class="ghost" title="Show/hide the protocol event inspector">Event inspector</button>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- ======================= SETTINGS ======================= -->
+  <aside class="sidebar" id="settings">
+    <details open>
+      <summary>1. Connection</summary>
+      <label>Mode
+        <select id="mode">
+          <option value="agent">Foundry agent (prompt agent + Voice Live)</option>
+          <option value="model">Direct model (Voice Live hosted model)</option>
+        </select>
+      </label>
+      <p class="hint" id="agentInfo"></p>
+      <div data-show="model">
+        <label>Model
+          <select id="model"></select>
+        </label>
+        <label>Instructions (system prompt)
+          <textarea id="instructions" rows="4">You are a helpful, concise voice assistant. Keep answers to one to three sentences and never use markdown.</textarea>
+        </label>
+        <label>Temperature <output id="temperatureOut">0.8</output>
+          <input type="range" id="temperature" min="0.6" max="1.2" step="0.1" value="0.8" />
+        </label>
+      </div>
+      <label id="accessCodeRow" hidden>Access code
+        <input type="password" id="accessCode" autocomplete="off" />
+      </label>
+    </details>
+
+    <details>
+      <summary>2. Voice (text to speech)</summary>
+      <label>Voice type
+        <select id="voiceType">
+          <option value="azure-standard">Azure standard / HD / MAI voice</option>
+          <option value="azure-custom">Azure custom neural voice</option>
+          <option value="openai">OpenAI voice (gpt-realtime only)</option>
+          <option value="azure-realtime-native">Azure realtime native (azure-realtime only)</option>
+        </select>
+      </label>
+      <div data-voice="azure-standard">
+        <label>Voice
+          <select id="voiceName">
+            <optgroup label="HD voices (Dragon, most natural)">
+              <option>en-US-Ava:DragonHDLatestNeural</option>
+              <option>en-US-Andrew:DragonHDLatestNeural</option>
+              <option>en-US-Emma:DragonHDLatestNeural</option>
+              <option>en-US-Brian:DragonHDLatestNeural</option>
+              <option>en-US-Aria:DragonHDLatestNeural</option>
+              <option>en-US-Davis:DragonHDLatestNeural</option>
+              <option>de-DE-Seraphina:DragonHDLatestNeural</option>
+              <option>fr-FR-Vivienne:DragonHDLatestNeural</option>
+              <option>ja-JP-Masaru:DragonHDLatestNeural</option>
+              <option>zh-CN-Xiaochen:DragonHDLatestNeural</option>
+            </optgroup>
+            <optgroup label="MAI-Voice-2-Flash (preview, ultra low latency)">
+              <option>en-US-Harper:MAI-Voice-2-Flash</option>
+            </optgroup>
+            <optgroup label="Multilingual neural voices">
+              <option>en-US-AvaMultilingualNeural</option>
+              <option>en-US-AndrewMultilingualNeural</option>
+              <option>en-US-EmmaMultilingualNeural</option>
+              <option>en-US-BrianMultilingualNeural</option>
+              <option>fr-FR-VivienneMultilingualNeural</option>
+              <option>de-DE-SeraphinaMultilingualNeural</option>
+            </optgroup>
+            <optgroup label="Locale neural voices">
+              <option>en-GB-SoniaNeural</option>
+              <option>en-IN-NeerjaNeural</option>
+              <option>es-MX-DaliaNeural</option>
+              <option>hi-IN-SwaraNeural</option>
+              <option>ja-JP-NanamiNeural</option>
+              <option>pt-BR-FranciscaNeural</option>
+            </optgroup>
+          </select>
+        </label>
+        <label>Or type any voice name (overrides the list)
+          <input id="voiceNameCustom" placeholder="e.g. it-IT-IsabellaNeural" />
+        </label>
+        <label>HD voice temperature <output id="voiceTempOut">0.8</output>
+          <input type="range" id="voiceTemperature" min="0" max="1" step="0.1" value="0.8" />
+        </label>
+      </div>
+      <div data-voice="azure-custom">
+        <label>Custom voice name <input id="customVoiceName" placeholder="MyBrandVoiceNeural" /></label>
+        <label>Custom voice deployment (endpoint) ID <input id="customVoiceEndpoint" placeholder="00000000-0000-0000-0000-000000000000" /></label>
+      </div>
+      <div data-voice="openai">
+        <label>OpenAI voice
+          <select id="openaiVoice">
+            <option>marin</option><option>cedar</option><option>alloy</option><option>ash</option>
+            <option>ballad</option><option>coral</option><option>echo</option><option>sage</option>
+            <option>shimmer</option><option>verse</option>
+          </select>
+        </label>
+      </div>
+      <div data-voice="azure-realtime-native">
+        <label>Native voice
+          <select id="nativeVoice">
+            <option>ava</option><option>andrew</option><option>emma</option><option>sonia</option>
+            <option>rayn</option><option>natasha</option><option>aarti</option><option>diya</option>
+            <option>meera</option><option>denise</option><option>seraphina</option><option>ximena</option>
+            <option>nanami</option><option>xiaoxiao</option>
+          </select>
+        </label>
+      </div>
+      <label data-voice-rate>Speaking rate <output id="rateOut">1.0</output>
+        <input type="range" id="voiceRate" min="0.5" max="1.5" step="0.05" value="1.0" />
+      </label>
+    </details>
+
+    <details>
+      <summary>3. Speech recognition (speech to text)</summary>
+      <label>Transcription model
+        <select id="sttModel">
+          <option value="azure-speech">azure-speech (Azure Speech STT, phrase lists, custom speech)</option>
+          <option value="mai-transcribe">mai-transcribe (MAI Transcribe, preview)</option>
+          <option value="whisper-1">whisper-1 (gpt-realtime only)</option>
+          <option value="gpt-4o-transcribe">gpt-4o-transcribe (gpt-realtime only)</option>
+        </select>
+      </label>
+      <label>Language
+        <select id="sttLanguage">
+          <option value="">Auto-detect</option>
+          <option value="en-US">English (US)</option>
+          <option value="en-US,es-ES,fr-FR,de-DE">Multi: English, Spanish, French, German</option>
+          <option value="en-US,hi-IN">Multi: English, Hindi</option>
+          <option value="es-ES">Spanish</option>
+          <option value="fr-FR">French</option>
+          <option value="de-DE">German</option>
+          <option value="ja-JP">Japanese</option>
+          <option value="zh-CN">Chinese (Mandarin)</option>
+          <option value="hi-IN">Hindi</option>
+        </select>
+      </label>
+      <label>Phrase list (comma separated, boosts recognition of brand or domain terms)
+        <input id="phraseList" value="Foundry, Voice Live, Contoso, Azure" />
+      </label>
+      <label>Custom speech endpoint ID (optional, locale=id)
+        <input id="customSpeech" placeholder="en-US=00000000-0000-0000-0000-000000000000" />
+      </label>
+    </details>
+
+    <details>
+      <summary>4. Turn detection &amp; interruptions</summary>
+      <label>Voice activity detection
+        <select id="vadType">
+          <option value="azure_semantic_vad">azure_semantic_vad (semantic, English-first)</option>
+          <option value="azure_semantic_vad_multilingual">azure_semantic_vad_multilingual (10 languages)</option>
+          <option value="server_vad">server_vad (volume based)</option>
+          <option value="semantic_vad">semantic_vad (gpt-realtime only)</option>
+          <option value="none">none (push-to-talk / manual commit)</option>
+        </select>
+      </label>
+      <label>Threshold <output id="vadThresholdOut">0.5</output>
+        <input type="range" id="vadThreshold" min="0.1" max="0.9" step="0.05" value="0.5" />
+      </label>
+      <label>Silence before end of turn (ms) <output id="silenceOut">500</output>
+        <input type="range" id="silenceMs" min="200" max="1500" step="50" value="500" />
+      </label>
+      <label>Prefix padding (ms) <output id="prefixOut">300</output>
+        <input type="range" id="prefixMs" min="0" max="1000" step="20" value="300" />
+      </label>
+      <label>End-of-utterance model
+        <select id="eouModel">
+          <option value="">Off</option>
+          <option value="semantic_detection_v1">semantic_detection_v1 (English)</option>
+          <option value="semantic_detection_v1_multilingual" selected>semantic_detection_v1_multilingual</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="removeFiller" checked /> Ignore filler words ("um", "uh") while the agent speaks</label>
+      <label class="check"><input type="checkbox" id="interruptResponse" checked /> Allow barge-in (interrupt the agent by speaking)</label>
+      <label class="check"><input type="checkbox" id="autoTruncate" checked /> Auto-truncate the agent's reply to what was actually heard</label>
+    </details>
+
+    <details>
+      <summary>5. Audio enhancements</summary>
+      <label>Noise suppression
+        <select id="noiseSuppression">
+          <option value="azure_deep_noise_suppression">azure_deep_noise_suppression (general)</option>
+          <option value="azure_deep_noise_suppression_headset">azure_deep_noise_suppression_headset (removes background speakers)</option>
+          <option value="azure_personal_noise_suppression">azure_personal_noise_suppression (target speaker)</option>
+          <option value="">Off</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="serverEc" checked /> Server echo cancellation (use speakers without a headset)</label>
+      <label class="check"><input type="checkbox" id="browserEc" /> Also use the browser's echo cancellation</label>
+      <label>Input sample rate
+        <select id="sampleRate">
+          <option value="24000">24 kHz (default)</option>
+          <option value="16000">16 kHz</option>
+        </select>
+      </label>
+    </details>
+
+    <details>
+      <summary>6. Conversation behaviour</summary>
+      <label>Proactive greeting
+        <select id="greeting">
+          <option value="llm">Agent generates a greeting</option>
+          <option value="pregenerated">Pre-generated greeting (fixed text)</option>
+          <option value="">Off (wait for the user)</option>
+        </select>
+      </label>
+      <label data-greeting="pregenerated">Greeting text
+        <input id="greetingText" value="Hi, I'm Aria, your Voice Live assistant. How can I help you today?" />
+      </label>
+      <label>Interim responses (fill silence while the agent thinks or calls tools)
+        <select id="interim">
+          <option value="llm">LLM-generated filler</option>
+          <option value="static">Static phrases</option>
+          <option value="">Off</option>
+        </select>
+      </label>
+      <label>Interim latency threshold (ms) <output id="interimLatencyOut">1500</output>
+        <input type="range" id="interimLatency" min="100" max="4000" step="100" value="1500" />
+      </label>
+      <label class="check"><input type="checkbox" id="wordTimestamps" checked /> Word timestamps (live caption of the spoken word)</label>
+      <label class="check"><input type="checkbox" id="visemes" checked /> Visemes (drive the lip-sync mouth)</label>
+    </details>
+
+    <details>
+      <summary>7. Avatar (text to speech avatar)</summary>
+      <label class="check"><input type="checkbox" id="avatarEnabled" /> Enable avatar video (WebRTC)</label>
+      <label>Avatar kind
+        <select id="avatarKind">
+          <option value="video">Video avatar</option>
+          <option value="photo">Photo avatar (VASA)</option>
+        </select>
+      </label>
+      <label data-avatar="video">Character-style (pick or type)
+        <input id="videoAvatar" list="videoAvatars" value="lisa-casual-sitting" />
+        <datalist id="videoAvatars">
+          <option value="lisa-casual-sitting"></option>
+          <option value="lisa-graceful-standing"></option>
+          <option value="lisa-technical-sitting"></option>
+          <option value="harry-business"></option>
+          <option value="jeff-business"></option>
+          <option value="lori-casual"></option>
+          <option value="max-business"></option>
+          <option value="meg-formal"></option>
+        </datalist>
+      </label>
+      <label data-avatar="photo">Photo avatar character
+        <input id="photoAvatar" value="anika" />
+      </label>
+      <label data-avatar="photo">Photo avatar model
+        <select id="photoModel"><option>vasa-1</option><option>vasa-2</option></select>
+      </label>
+      <label class="check"><input type="checkbox" id="avatarCustom" /> Custom avatar (use your own trained character name)</label>
+      <label>Background colour <input type="color" id="avatarBg" value="#ffffff" /></label>
+    </details>
+
+    <details data-show="model">
+      <summary>8. Tools (direct model mode)</summary>
+      <p class="hint">In agent mode, tools are configured on the Foundry agent (this demo's agent has Microsoft Learn MCP and web search).</p>
+      <label class="check"><input type="checkbox" id="toolTime" checked /> Function: get_current_time (runs in the browser)</label>
+      <label class="check"><input type="checkbox" id="toolWeather" checked /> Function: get_weather (live data from Open-Meteo)</label>
+      <label class="check"><input type="checkbox" id="toolMcp" checked /> MCP server: Microsoft Learn docs (runs in Voice Live)</label>
+    </details>
+
+    <div class="sidebar-actions">
+      <button id="applyLive" class="secondary" disabled title="Send a session.update with the current settings without reconnecting">Apply settings live</button>
+    </div>
+  </aside>
+
+  <!-- ======================= STAGE ======================= -->
+  <section class="stage">
+    <div class="visual">
+      <div id="avatarContainer" class="avatar" hidden></div>
+      <div id="orb" class="orb">
+        <svg viewBox="0 0 120 120" class="face" aria-hidden="true">
+          <circle cx="42" cy="48" r="6" />
+          <circle cx="78" cy="48" r="6" />
+          <ellipse id="mouth" cx="60" cy="80" rx="18" ry="2" />
+        </svg>
+      </div>
+      <div class="caption" id="liveWord">&nbsp;</div>
+      <div class="metrics">
+        <span>State: <b id="convState">idle</b></span>
+        <span>Last latency: <b id="latency">-</b></span>
+        <span>Voice: <b id="activeVoice">-</b></span>
+        <span>Session: <b id="sessionId">-</b></span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="connectBtn" class="primary">Start session</button>
+      <button id="micBtn" class="mic" disabled title="Mute / unmute the microphone">Mic off</button>
+      <button id="stopBtn" class="secondary" disabled title="Cancel the current response">Stop speaking</button>
+      <button id="pttBtn" class="secondary" disabled hidden title="Hold to talk (when turn detection is 'none')">Hold to talk</button>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="samples" id="samples"></div>
+
+    <form class="composer" id="composer">
+      <input id="textInput" placeholder="Type a message (or just talk)..." autocomplete="off" disabled />
+      <button type="submit" class="primary" id="sendBtn" disabled>Send</button>
+    </form>
+  </section>
+
+  <!-- ======================= INSPECTOR ======================= -->
+  <aside class="inspector" id="inspector" hidden>
+    <div class="inspector-head">
+      <h2>Protocol events</h2>
+      <label class="check small"><input type="checkbox" id="showAudio" /> show audio frames</label>
+      <button id="clearEvents" class="ghost">Clear</button>
+    </div>
+    <p class="hint">Audio frames sent: <b id="audioOut">0</b> &middot; received: <b id="audioIn">0</b></p>
+    <ol id="events" class="events"></ol>
+  </aside>
+</main>
+
+<script src="app.js" type="module"></script>
+</body>
+</html>
